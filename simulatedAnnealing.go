@@ -33,7 +33,7 @@ func NewSimulatedAnnealing(
 	seedReiterations int,
 ) (*SimulatedAnnealing, error) {
 
-	_, err := statFile.WriteString("temperature,elapsed_seconds\n")
+	_, err := statFile.WriteString("elapsed_seconds,temperature\n")
 	if err != nil {
 		return nil, err
 	}
@@ -110,9 +110,9 @@ func (sa *SimulatedAnnealing) logIteration() error {
 	)
 
 	_, err := sa.statFile.WriteString(
-		fmt.Sprintf("%d,%.0f\n",
-			sa.temperature,
-			time.Since(sa.startingTime).Seconds()),
+		fmt.Sprintf("%.0f,%d\n",
+			time.Since(sa.startingTime).Seconds(),
+			sa.temperature),
 	)
 	return err
 }

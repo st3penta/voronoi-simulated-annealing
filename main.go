@@ -28,7 +28,7 @@ func main() {
 				Name:        "input image",
 				Aliases:     []string{"i"},
 				Usage:       "path to the input image `FILE`",
-				Value:       "./" + imageName + ".jpg",
+				Value:       "./res/" + imageName + ".jpg",
 				Destination: &inputImageFilePath,
 			},
 		},
@@ -36,7 +36,7 @@ func main() {
 		Action: func(cCtx *cli.Context) error {
 			targetImage := getTargetImage(inputImageFilePath)
 			statFile, err := os.Create(
-				fmt.Sprintf("%s_seeds-%d_reiterations-%d_movreduction-%d.csv",
+				fmt.Sprintf("./res/%s_%d-seeds_%d-reiterations_%d-movreduction.csv",
 					imageName,
 					numSeeds,
 					seedReiterations,
