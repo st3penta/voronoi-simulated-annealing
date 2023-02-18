@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
 	"os"
 	"time"
 )
@@ -24,6 +26,10 @@ type SimulatedAnnealing struct {
 	startingTime     time.Time
 	statFile         *os.File
 	seedReiterations int
+	r                *rand.Rand
+	bestSolution     []Point
+	bestTemperature  int
+	percentThreshold int
 }
 
 func NewSimulatedAnnealing(
@@ -31,6 +37,7 @@ func NewSimulatedAnnealing(
 	targetImage TargetImage,
 	statFile *os.File,
 	seedReiterations int,
+	percentThreshold int,
 ) (*SimulatedAnnealing, error) {
 
 	_, err := statFile.WriteString("elapsed_seconds,temperature\n")
@@ -38,21 +45,26 @@ func NewSimulatedAnnealing(
 		return nil, err
 	}
 
+	maxTemp := 4 * 256 * targetImage.Width * targetImage.Height
 	return &SimulatedAnnealing{
 		voronoi:          voronoi,
 		targetImage:      targetImage,
-		temperature:      4 * 256 * targetImage.Width * targetImage.Height,
+		temperature:      maxTemp,
 		currentSeed:      0,
 		startingTime:     time.Now(),
 		statFile:         statFile,
 		seedReiterations: seedReiterations,
+		r:                rand.New(rand.NewSource(time.Now().UnixNano())),
+		bestSolution:     nil,
+		bestTemperature:  maxTemp,
+		percentThreshold: percentThreshold,
 	}, nil
 }
 
 func (sa *SimulatedAnnealing) Iterate() error {
 	currentSeeds := sa.voronoi.GetSeeds()
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < sa.seedReiterations; i++ {
 
 		pErr := sa.voronoi.Perturbate(sa.temperature, sa.currentSeed)
 		if pErr != nil {
@@ -69,15 +81,27 @@ func (sa *SimulatedAnnealing) Iterate() error {
 		if sa.isAcceptableTemperature(newTemperature) {
 			sa.temperature = newTemperature
 
+			if sa.temperature < sa.bestTemperature {
+				sa.bestTemperature = sa.temperature
+				sa.bestSolution = sa.voronoi.GetSeeds()
+			}
+
 			err := sa.logIteration()
 			if err != nil {
 				return err
 			}
-
-			break
-		} else {
-			sa.voronoi.WithSeeds(currentSeeds)
 		}
+
+		if (newTemperature - sa.bestTemperature) > sa.bestTemperature*sa.percentThreshold/100 {
+			fmt.Printf("Current temperature exceeded %d percent threshold, restarting from the best solution so far: %d\n", sa.percentThreshold, sa.bestTemperature)
+
+			sa.voronoi.WithSeeds(sa.bestSolution)
+			sa.temperature = sa.bestTemperature
+			break
+		}
+
+		sa.voronoi.WithSeeds(currentSeeds)
+
 	}
 	sa.currentSeed++
 	sa.currentSeed = sa.currentSeed % len(currentSeeds)
@@ -99,14 +123,20 @@ func (sa *SimulatedAnnealing) computeTemperature() int {
 }
 
 func (sa *SimulatedAnnealing) isAcceptableTemperature(temperature int) bool {
-	return temperature < sa.temperature
+	if temperature < sa.temperature {
+		return true
+	}
+
+	prob := 10 / math.Log10(float64(temperature-sa.temperature))
+	rand := sa.r.Float64()
+	return prob > rand
 }
 
 func (sa *SimulatedAnnealing) logIteration() error {
-	fmt.Println(
-		fmt.Sprintf("Current temperature: %d, time passed: %s",
-			sa.temperature,
-			time.Since(sa.startingTime)),
+	fmt.Printf(
+		"Current temperature: %d, time passed: %s\n",
+		sa.temperature,
+		time.Since(sa.startingTime),
 	)
 
 	_, err := sa.statFile.WriteString(

@@ -1,9 +1,14 @@
 package main
 
 import (
+	"errors"
+	"time"
+
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
+
+var SimulationCompleted = errors.New("Simulation completed")
 
 type SimulatedAnnealingEngine interface {
 	Iterate() error
@@ -20,6 +25,8 @@ type Canvas struct {
 	gameRunning bool
 
 	simulatedAnnealing SimulatedAnnealingEngine
+	simulationDuration time.Duration
+	simulationStart    time.Time
 }
 
 // NewCanvas creates a canvas with the simulated annealing ready to start
@@ -27,6 +34,7 @@ func NewCanvas(
 	width int,
 	height int,
 	simulatedAnnealing SimulatedAnnealingEngine,
+	simulationDuration time.Duration,
 ) (*Canvas, error) {
 
 	g := &Canvas{
@@ -34,12 +42,18 @@ func NewCanvas(
 		height:             height,
 		gameRunning:        true,
 		simulatedAnnealing: simulatedAnnealing,
+		simulationDuration: simulationDuration,
+		simulationStart:    time.Now(),
 	}
 	return g, nil
 }
 
 // Update computes a new frame
 func (g *Canvas) Update() error {
+
+	if time.Since(g.simulationStart) > g.simulationDuration {
+		return SimulationCompleted
+	}
 
 	// Intercepts the Space key and starts/stops the execution
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {

@@ -5,17 +5,20 @@ import (
 	"image"
 	_ "image/jpeg"
 	"os"
+	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	numSeeds                = 100 // number of randomly generated seeds for the voronoi diagram
-	seedReiterations        = 10
-	movementReductionFactor = 10
+var (
+	numSeeds                = 10
+	seedReiterations        = 1
+	movementReductionFactor = 5
+	percentThreshold        = 10
+	simulationDuration      = 3 * time.Hour
 
-	imageName = "monnalisa"
+	imageName = "homer"
 )
 
 func main() {
@@ -34,19 +37,16 @@ func main() {
 		},
 
 		Action: func(cCtx *cli.Context) error {
-			targetImage := getTargetImage(inputImageFilePath)
-			statFile, err := os.Create(
-				fmt.Sprintf("./res/%s_%d-seeds_%d-reiterations_%d-movreduction.csv",
-					imageName,
-					numSeeds,
-					seedReiterations,
-					movementReductionFactor,
-				))
-			if err != nil {
-				return err
-			}
 
-			runSimulatedAnnealing(targetImage, statFile)
+			targetImage := getTargetImage(inputImageFilePath)
+
+			runSimulatedAnnealing(
+				targetImage,
+				numSeeds,
+				seedReiterations,
+				movementReductionFactor,
+				percentThreshold,
+			)
 			return nil
 		},
 	}
@@ -91,7 +91,24 @@ func getTargetImage(inputImageFilePath string) TargetImage {
 	}
 }
 
-func runSimulatedAnnealing(targetImage TargetImage, statFile *os.File) {
+func runSimulatedAnnealing(
+	targetImage TargetImage,
+	numSeeds int,
+	seedReiterations int,
+	movementReductionFactor int,
+	percentThreshold int,
+) {
+
+	statFile, err := os.Create(
+		fmt.Sprintf("./res/%s_%d-seeds_%d-reiterations_%d-movreduction.csv",
+			imageName,
+			numSeeds,
+			seedReiterations,
+			movementReductionFactor,
+		))
+	if err != nil {
+		panic(err)
+	}
 
 	ebiten.SetWindowTitle(
 		fmt.Sprintf("Voronoi Simulated Annealing - %ds, %dr, %dm",
@@ -116,6 +133,7 @@ func runSimulatedAnnealing(targetImage TargetImage, statFile *os.File) {
 		targetImage,
 		statFile,
 		seedReiterations,
+		percentThreshold,
 	)
 	if saErr != nil {
 		panic(saErr)
@@ -125,12 +143,16 @@ func runSimulatedAnnealing(targetImage TargetImage, statFile *os.File) {
 		targetImage.Width,
 		targetImage.Height,
 		simulatedAnnealing,
+		simulationDuration,
 	)
 	if cErr != nil {
 		panic(cErr)
 	}
 
 	if err := ebiten.RunGame(c); err != nil {
+		if err == SimulationCompleted {
+			return
+		}
 		panic(err)
 	}
 }
