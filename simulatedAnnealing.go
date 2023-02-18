@@ -26,6 +26,7 @@ type SimulatedAnnealing struct {
 	temperature      int
 	startingTime     time.Time
 	statFile         *os.File
+	perturbations    int
 	seedReiterations int
 	r                *rand.Rand
 	bestSolution     []Point
@@ -37,6 +38,7 @@ func NewSimulatedAnnealing(
 	voronoi VoronoiDiagram,
 	targetImage TargetImage,
 	statFile *os.File,
+	perturbations int,
 	seedReiterations int,
 	percentThreshold int,
 ) (*SimulatedAnnealing, error) {
@@ -53,6 +55,7 @@ func NewSimulatedAnnealing(
 		temperature:      maxTemp,
 		startingTime:     time.Now(),
 		statFile:         statFile,
+		perturbations:    perturbations,
 		seedReiterations: seedReiterations,
 		r:                rand.New(rand.NewSource(time.Now().UnixNano())),
 		bestSolution:     nil,
@@ -66,12 +69,14 @@ func (sa *SimulatedAnnealing) Iterate() error {
 
 	for i := 0; i < sa.seedReiterations; i++ {
 
-		pErr := sa.voronoi.Perturbate(
-			sa.temperature,
-			sa.r.Intn(len(currentSeeds)),
-		)
-		if pErr != nil {
-			return pErr
+		for j := 0; j < sa.perturbations; j++ {
+			pErr := sa.voronoi.Perturbate(
+				sa.temperature,
+				sa.r.Intn(len(currentSeeds)),
+			)
+			if pErr != nil {
+				return pErr
+			}
 		}
 
 		vErr := sa.voronoi.Tessellate()

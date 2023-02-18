@@ -13,6 +13,7 @@ import (
 
 var (
 	numSeeds                = 10
+	perturbations           = 2
 	seedReiterations        = 1
 	movementReductionFactor = 5
 	percentThreshold        = 10
@@ -41,13 +42,7 @@ func main() {
 
 			targetImage := getTargetImage(inputImageFilePath)
 
-			runSimulatedAnnealing(
-				targetImage,
-				numSeeds,
-				seedReiterations,
-				movementReductionFactor,
-				percentThreshold,
-			)
+			runSimulatedAnnealing(targetImage)
 			return nil
 		},
 	}
@@ -94,10 +89,6 @@ func getTargetImage(inputImageFilePath string) TargetImage {
 
 func runSimulatedAnnealing(
 	targetImage TargetImage,
-	numSeeds int,
-	seedReiterations int,
-	movementReductionFactor int,
-	percentThreshold int,
 ) {
 
 	statFile, err := os.Create(
@@ -133,6 +124,7 @@ func runSimulatedAnnealing(
 		voronoi,
 		targetImage,
 		statFile,
+		perturbations,
 		seedReiterations,
 		percentThreshold,
 	)
