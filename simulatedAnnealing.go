@@ -79,18 +79,19 @@ func (sa *SimulatedAnnealing) Iterate() error {
 
 		newTemperature := sa.computeTemperature()
 
-		if sa.isAcceptableTemperature(newTemperature) {
-			sa.temperature = newTemperature
+		if !sa.isAcceptableTemperature(newTemperature) {
+			break
+		}
+		sa.temperature = newTemperature
 
-			if sa.temperature < sa.bestTemperature {
-				sa.bestTemperature = sa.temperature
-				sa.bestSolution = sa.voronoi.GetSeeds()
-			}
+		if sa.temperature < sa.bestTemperature {
+			sa.bestTemperature = sa.temperature
+			sa.bestSolution = sa.voronoi.GetSeeds()
+		}
 
-			err := sa.logIteration()
-			if err != nil {
-				return err
-			}
+		err := sa.logIteration()
+		if err != nil {
+			return err
 		}
 
 		if (newTemperature - sa.bestTemperature) > sa.bestTemperature*sa.percentThreshold/100 {
