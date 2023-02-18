@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"math"
 	"math/rand"
 	"os"
@@ -14,6 +15,7 @@ type VoronoiDiagram interface {
 	Tessellate() error
 	Perturbate(temperature int, seedIndex int) error
 	ToPixels() []byte
+	ToImage() image.Image
 	GetSeeds() []Point
 	WithSeeds([]Point)
 }
@@ -148,4 +150,8 @@ func (sa *SimulatedAnnealing) logIteration() error {
 
 func (sa *SimulatedAnnealing) ToPixels() []byte {
 	return sa.voronoi.ToPixels()
+}
+
+func (sa *SimulatedAnnealing) GetSnapshot() image.Image {
+	return sa.voronoi.ToImage()
 }

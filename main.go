@@ -17,6 +17,7 @@ var (
 	movementReductionFactor = 5
 	percentThreshold        = 10
 	simulationDuration      = 3 * time.Hour
+	snapshotsInterval       = 10 * time.Minute
 
 	imageName = "homer"
 )
@@ -144,6 +145,7 @@ func runSimulatedAnnealing(
 		targetImage.Height,
 		simulatedAnnealing,
 		simulationDuration,
+		snapshotsInterval,
 	)
 	if cErr != nil {
 		panic(cErr)

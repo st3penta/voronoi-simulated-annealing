@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"image"
+	"image/color"
 	"math/rand"
 	"time"
 )
@@ -107,7 +109,7 @@ func (v *Voronoi) initSeeds() {
 			X:        x,
 			Y:        y,
 			Distance: &d,
-			Color: &Color{
+			Color: &color.RGBA{
 				R: uint8(v.r.Intn(256)),
 				G: uint8(v.r.Intn(256)),
 				B: uint8(v.r.Intn(256)),
@@ -287,11 +289,12 @@ func (v *Voronoi) Perturbate(temperature int, seedIndex int) error {
 
 	newColor := toPerturbate.Color
 	if willPerturbateColor {
-		newColor = &Color{
-			R: v.perturbateTint(toPerturbate.Color.R, 256, perturbationFactor),
-			G: v.perturbateTint(toPerturbate.Color.G, 256, perturbationFactor),
-			B: v.perturbateTint(toPerturbate.Color.B, 256, perturbationFactor),
-			A: v.perturbateTint(toPerturbate.Color.A, 256, perturbationFactor),
+		newAlpha := v.perturbateTint(toPerturbate.Color.A, 256, perturbationFactor)
+		newColor = &color.RGBA{
+			A: newAlpha,
+			R: v.perturbateTint(toPerturbate.Color.R, int(newAlpha), perturbationFactor),
+			G: v.perturbateTint(toPerturbate.Color.G, int(newAlpha), perturbationFactor),
+			B: v.perturbateTint(toPerturbate.Color.B, int(newAlpha), perturbationFactor),
 		}
 	}
 
@@ -381,4 +384,27 @@ func (v *Voronoi) ToPixels() []byte {
 	}
 
 	return pixels
+}
+
+func (v *Voronoi) ToImage() image.Image {
+	res := image.NewRGBA(image.Rect(0, 0, v.width, v.height))
+
+	// iterate through each pixel
+	for i := 0; i < v.width; i++ {
+		for j := 0; j < v.height; j++ {
+
+			c := color.RGBA{
+				R: 0,
+				G: 0,
+				B: 0,
+				A: 0,
+			}
+			if v.diagram[i][j] != nil && v.diagram[i][j].Color != nil {
+				c = *v.diagram[i][j].Color
+			}
+			res.Set(i, j, c)
+		}
+	}
+
+	return res
 }
