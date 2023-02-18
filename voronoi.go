@@ -132,11 +132,11 @@ func (v *Voronoi) initTessellation() {
 }
 
 /*
-	Tessellate computes the voronoi diagram
+Tessellate computes the voronoi diagram
 
-	It works on a list of 'active' seeds, where 'active' means that the seed can still extend its area.
-	At each iteration, the area of the cell corresponding to each seed gets extended by 1 pixel,
-	and each of these pixels gets assigned to that cell (unless it already belongs to a nearest seed)
+It works on a list of 'active' seeds, where 'active' means that the seed can still extend its area.
+At each iteration, the area of the cell corresponding to each seed gets extended by 1 pixel,
+and each of these pixels gets assigned to that cell (unless it already belongs to a nearest seed)
 */
 func (v *Voronoi) Tessellate() error {
 
@@ -206,16 +206,16 @@ func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bo
 }
 
 /*
-	getIncrementalVectors
+getIncrementalVectors
 
-	It returns a list of points, intended as coordinates relative to the seed,
-	that represents the new layer of pixels of the expanding cell.
+It returns a list of points, intended as coordinates relative to the seed,
+that represents the new layer of pixels of the expanding cell.
 
-	It works by computing a 45° diagonal that has an horizontal (so not orthogonal!)
-	distance from the seed equal to the radius.
-	This diagonal is one segment (out of 8) of the diamond surrounding the seed: to compute all
-	the other segments and get the complete diamond, the algorithm generates all the possible
-	combinations of the relative coordinates
+It works by computing a 45° diagonal that has an horizontal (so not orthogonal!)
+distance from the seed equal to the radius.
+This diagonal is one segment (out of 8) of the diamond surrounding the seed: to compute all
+the other segments and get the complete diamond, the algorithm generates all the possible
+combinations of the relative coordinates
 */
 func (v *Voronoi) getIncrementalVectors() []Point {
 	combinations := []Point{}
@@ -266,21 +266,40 @@ func (v *Voronoi) GetSeeds() []Point {
 }
 
 func (v *Voronoi) Perturbate(temperature int, seedIndex int) error {
-	// newSeeds := []Point{}
 
 	perturbationFactor := float64(temperature) / float64(4*256*v.width*v.height)
 	toPerturbate := v.seeds[seedIndex]
-	newSeed := Point{
-		X: v.perturbateCoordinate(toPerturbate.X, v.width, perturbationFactor),
-		Y: v.perturbateCoordinate(toPerturbate.Y, v.height, perturbationFactor),
-		Color: &Color{
+	willPerturbateCoords := v.r.Intn(2) == 1
+	willPerturbateColor := v.r.Intn(2) == 1
+
+	// avoid null perturbation
+	if !willPerturbateCoords && !willPerturbateColor {
+		willPerturbateCoords = true
+		willPerturbateColor = true
+	}
+
+	newX := toPerturbate.X
+	newY := toPerturbate.Y
+	if willPerturbateCoords {
+		newX = v.perturbateCoordinate(toPerturbate.X, v.width, perturbationFactor)
+		newY = v.perturbateCoordinate(toPerturbate.Y, v.height, perturbationFactor)
+	}
+
+	newColor := toPerturbate.Color
+	if willPerturbateColor {
+		newColor = &Color{
 			R: v.perturbateTint(toPerturbate.Color.R, 256, perturbationFactor),
 			G: v.perturbateTint(toPerturbate.Color.G, 256, perturbationFactor),
 			B: v.perturbateTint(toPerturbate.Color.B, 256, perturbationFactor),
 			A: v.perturbateTint(toPerturbate.Color.A, 256, perturbationFactor),
-		},
+		}
 	}
-	// fmt.Println(newSeed.Color)
+
+	newSeed := Point{
+		X:     newX,
+		Y:     newY,
+		Color: newColor,
+	}
 
 	newSeeds := []Point{}
 	newSeeds = append(newSeeds, v.seeds...)
