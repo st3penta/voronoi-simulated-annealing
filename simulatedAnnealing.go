@@ -22,7 +22,6 @@ type SimulatedAnnealing struct {
 	voronoi          VoronoiDiagram
 	targetImage      TargetImage
 	temperature      int
-	currentSeed      int
 	startingTime     time.Time
 	statFile         *os.File
 	seedReiterations int
@@ -50,7 +49,6 @@ func NewSimulatedAnnealing(
 		voronoi:          voronoi,
 		targetImage:      targetImage,
 		temperature:      maxTemp,
-		currentSeed:      0,
 		startingTime:     time.Now(),
 		statFile:         statFile,
 		seedReiterations: seedReiterations,
@@ -66,7 +64,10 @@ func (sa *SimulatedAnnealing) Iterate() error {
 
 	for i := 0; i < sa.seedReiterations; i++ {
 
-		pErr := sa.voronoi.Perturbate(sa.temperature, sa.currentSeed)
+		pErr := sa.voronoi.Perturbate(
+			sa.temperature,
+			sa.r.Intn(len(currentSeeds)),
+		)
 		if pErr != nil {
 			return pErr
 		}
@@ -101,10 +102,7 @@ func (sa *SimulatedAnnealing) Iterate() error {
 		}
 
 		sa.voronoi.WithSeeds(currentSeeds)
-
 	}
-	sa.currentSeed++
-	sa.currentSeed = sa.currentSeed % len(currentSeeds)
 
 	return nil
 }
@@ -127,7 +125,7 @@ func (sa *SimulatedAnnealing) isAcceptableTemperature(temperature int) bool {
 		return true
 	}
 
-	prob := 10 / math.Log10(float64(temperature-sa.temperature))
+	prob := 1 / math.Log10(float64(temperature-sa.temperature))
 	rand := sa.r.Float64()
 	return prob > rand
 }
