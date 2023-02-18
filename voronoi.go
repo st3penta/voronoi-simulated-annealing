@@ -113,7 +113,7 @@ func (v *Voronoi) initSeeds() {
 				R: uint8(v.r.Intn(256)),
 				G: uint8(v.r.Intn(256)),
 				B: uint8(v.r.Intn(256)),
-				A: uint8(v.r.Intn(256)),
+				A: 255,
 			},
 		}
 
@@ -289,12 +289,11 @@ func (v *Voronoi) Perturbate(temperature int, seedIndex int) error {
 
 	newColor := toPerturbate.Color
 	if willPerturbateColor {
-		newAlpha := v.perturbateTint(toPerturbate.Color.A, 256, perturbationFactor)
 		newColor = &color.RGBA{
-			A: newAlpha,
-			R: v.perturbateTint(toPerturbate.Color.R, int(newAlpha), perturbationFactor),
-			G: v.perturbateTint(toPerturbate.Color.G, int(newAlpha), perturbationFactor),
-			B: v.perturbateTint(toPerturbate.Color.B, int(newAlpha), perturbationFactor),
+			A: 255,
+			R: v.perturbateTint(toPerturbate.Color.R, 256, perturbationFactor),
+			G: v.perturbateTint(toPerturbate.Color.G, 256, perturbationFactor),
+			B: v.perturbateTint(toPerturbate.Color.B, 256, perturbationFactor),
 		}
 	}
 
@@ -397,7 +396,7 @@ func (v *Voronoi) ToImage() image.Image {
 				R: 0,
 				G: 0,
 				B: 0,
-				A: 0,
+				A: 255,
 			}
 			if v.diagram[i][j] != nil && v.diagram[i][j].Color != nil {
 				c = *v.diagram[i][j].Color
