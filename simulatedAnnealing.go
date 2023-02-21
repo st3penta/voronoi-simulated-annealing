@@ -25,7 +25,6 @@ type SimulatedAnnealing struct {
 	targetImage      TargetImage
 	startingTime     time.Time
 	statFile         *os.File
-	seedReiterations int
 	r                *rand.Rand
 	temperature      float64
 	maxHeat          float64
@@ -38,7 +37,6 @@ func NewSimulatedAnnealing(
 	voronoi VoronoiDiagram,
 	targetImage TargetImage,
 	statFile *os.File,
-	seedReiterations int,
 	percentThreshold int,
 ) (*SimulatedAnnealing, error) {
 
@@ -58,7 +56,6 @@ func NewSimulatedAnnealing(
 		temperature:      1.0,
 		startingTime:     time.Now(),
 		statFile:         statFile,
-		seedReiterations: seedReiterations,
 		r:                rand.New(rand.NewSource(time.Now().UnixNano())),
 		percentThreshold: percentThreshold,
 	}, nil
@@ -67,50 +64,46 @@ func NewSimulatedAnnealing(
 func (sa *SimulatedAnnealing) Iterate() error {
 	currentSeeds := sa.voronoi.GetSeeds()
 
-	for i := 0; i < sa.seedReiterations; i++ {
-
-		perturbations := int(math.Ceil(sa.temperature * 10))
-		for j := 0; j < perturbations; j++ {
-			pErr := sa.voronoi.Perturbate(
-				sa.temperature,
-				sa.r.Intn(len(currentSeeds)),
-			)
-			if pErr != nil {
-				return pErr
-			}
+	perturbations := int(math.Ceil(sa.temperature * 10))
+	for j := 0; j < perturbations; j++ {
+		pErr := sa.voronoi.Perturbate(
+			sa.temperature,
+			sa.r.Intn(len(currentSeeds)),
+		)
+		if pErr != nil {
+			return pErr
 		}
+	}
 
-		vErr := sa.voronoi.Tessellate()
-		if vErr != nil {
-			return vErr
-		}
+	vErr := sa.voronoi.Tessellate()
+	if vErr != nil {
+		return vErr
+	}
 
-		newTemperature := sa.computeTemperature()
-		// fmt.Println(newTemperature)
+	newTemperature := sa.computeTemperature()
 
-		if !sa.isAcceptableTemperature(newTemperature) {
-			sa.voronoi.WithSeeds(currentSeeds)
-			break
-		}
+	if !sa.isAcceptableTemperature(newTemperature) {
+		sa.voronoi.WithSeeds(currentSeeds)
+		return nil
+	}
 
-		if (newTemperature - sa.bestTemperature) > sa.bestTemperature*float64(sa.percentThreshold)/100 {
-			fmt.Printf("Current temperature exceeded %d percent threshold, restarting from the best solution so far: %.10f\n", sa.percentThreshold, sa.bestTemperature)
+	if (newTemperature - sa.bestTemperature) > sa.bestTemperature*float64(sa.percentThreshold)/100 {
+		fmt.Printf("Current temperature exceeded %d percent threshold, restarting from the best solution so far: %.10f\n", sa.percentThreshold, sa.bestTemperature)
 
-			sa.voronoi.WithSeeds(sa.bestSolution)
-			sa.temperature = sa.bestTemperature
-			break
-		}
+		sa.voronoi.WithSeeds(sa.bestSolution)
+		sa.temperature = sa.bestTemperature
+		return nil
+	}
 
-		sa.temperature = newTemperature
-		err := sa.logIteration()
-		if err != nil {
-			return err
-		}
+	sa.temperature = newTemperature
+	err := sa.logIteration()
+	if err != nil {
+		return err
+	}
 
-		if sa.temperature < sa.bestTemperature {
-			sa.bestTemperature = sa.temperature
-			sa.bestSolution = sa.voronoi.GetSeeds()
-		}
+	if sa.temperature < sa.bestTemperature {
+		sa.bestTemperature = sa.temperature
+		sa.bestSolution = sa.voronoi.GetSeeds()
 	}
 
 	return nil

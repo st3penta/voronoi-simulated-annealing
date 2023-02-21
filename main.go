@@ -13,8 +13,6 @@ import (
 
 var (
 	numSeeds                = 50
-	perturbations           = 3
-	seedReiterations        = 1
 	movementReductionFactor = 10
 	percentThreshold        = 10
 	simulationDuration      = 3 * time.Hour
@@ -92,10 +90,9 @@ func runSimulatedAnnealing(
 ) {
 
 	statFile, err := os.Create(
-		fmt.Sprintf("./res/%s_%d-seeds_%d-reiterations_%d-movreduction.csv",
+		fmt.Sprintf("./res/%s_%d-seeds_%d-movreduction.csv",
 			imageName,
 			numSeeds,
-			seedReiterations,
 			movementReductionFactor,
 		))
 	if err != nil {
@@ -103,9 +100,8 @@ func runSimulatedAnnealing(
 	}
 
 	ebiten.SetWindowTitle(
-		fmt.Sprintf("Voronoi Simulated Annealing - %ds, %dr, %dm",
+		fmt.Sprintf("Voronoi Simulated Annealing - %ds, %dm",
 			numSeeds,
-			seedReiterations,
 			movementReductionFactor,
 		))
 	ebiten.SetWindowSize(targetImage.Width, targetImage.Height)
@@ -124,7 +120,6 @@ func runSimulatedAnnealing(
 		voronoi,
 		targetImage,
 		statFile,
-		seedReiterations,
 		percentThreshold,
 	)
 	if saErr != nil {
