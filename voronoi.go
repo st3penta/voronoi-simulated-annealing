@@ -110,9 +110,9 @@ func (v *Voronoi) initSeeds() {
 			Y:        y,
 			Distance: &d,
 			Color: &color.RGBA{
-				R: uint8(v.r.Intn(256)),
-				G: uint8(v.r.Intn(256)),
-				B: uint8(v.r.Intn(256)),
+				R: 0,
+				G: 0,
+				B: 0,
 				A: 255,
 			},
 		}
