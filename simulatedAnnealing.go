@@ -13,7 +13,7 @@ import (
 type VoronoiDiagram interface {
 	Init()
 	Tessellate() error
-	Perturbate(temperature int, seedIndex int) error
+	Perturbate(temperature float64, seedIndex int) error
 	ToPixels() []byte
 	ToImage() image.Image
 	GetSeeds() []Point
@@ -23,14 +23,15 @@ type VoronoiDiagram interface {
 type SimulatedAnnealing struct {
 	voronoi          VoronoiDiagram
 	targetImage      TargetImage
-	temperature      int
 	startingTime     time.Time
 	statFile         *os.File
 	perturbations    int
 	seedReiterations int
 	r                *rand.Rand
+	temperature      float64
+	maxHeat          float64
+	bestTemperature  float64
 	bestSolution     []Point
-	bestTemperature  int
 	percentThreshold int
 }
 
@@ -48,18 +49,20 @@ func NewSimulatedAnnealing(
 		return nil, err
 	}
 
-	maxTemp := 4 * 256 * targetImage.Width * targetImage.Height
+	maxHeat := float64(4 * 255 * targetImage.Width * targetImage.Height)
+
 	return &SimulatedAnnealing{
 		voronoi:          voronoi,
 		targetImage:      targetImage,
-		temperature:      maxTemp,
+		maxHeat:          maxHeat,
+		bestTemperature:  1.0,
+		bestSolution:     nil,
+		temperature:      1.0,
 		startingTime:     time.Now(),
 		statFile:         statFile,
 		perturbations:    perturbations,
 		seedReiterations: seedReiterations,
 		r:                rand.New(rand.NewSource(time.Now().UnixNano())),
-		bestSolution:     nil,
-		bestTemperature:  maxTemp,
 		percentThreshold: percentThreshold,
 	}, nil
 }
@@ -85,68 +88,70 @@ func (sa *SimulatedAnnealing) Iterate() error {
 		}
 
 		newTemperature := sa.computeTemperature()
+		// fmt.Println(newTemperature)
 
 		if !sa.isAcceptableTemperature(newTemperature) {
+			sa.voronoi.WithSeeds(currentSeeds)
 			break
 		}
-		sa.temperature = newTemperature
 
-		if sa.temperature < sa.bestTemperature {
-			sa.bestTemperature = sa.temperature
-			sa.bestSolution = sa.voronoi.GetSeeds()
-		}
-
-		err := sa.logIteration()
-		if err != nil {
-			return err
-		}
-
-		if (newTemperature - sa.bestTemperature) > sa.bestTemperature*sa.percentThreshold/100 {
-			fmt.Printf("Current temperature exceeded %d percent threshold, restarting from the best solution so far: %d\n", sa.percentThreshold, sa.bestTemperature)
+		if (newTemperature - sa.bestTemperature) > sa.bestTemperature*float64(sa.percentThreshold)/100 {
+			fmt.Printf("Current temperature exceeded %d percent threshold, restarting from the best solution so far: %.10f\n", sa.percentThreshold, sa.bestTemperature)
 
 			sa.voronoi.WithSeeds(sa.bestSolution)
 			sa.temperature = sa.bestTemperature
 			break
 		}
 
-		sa.voronoi.WithSeeds(currentSeeds)
+		sa.temperature = newTemperature
+		err := sa.logIteration()
+		if err != nil {
+			return err
+		}
+
+		if sa.temperature < sa.bestTemperature {
+			sa.bestTemperature = sa.temperature
+			sa.bestSolution = sa.voronoi.GetSeeds()
+		}
 	}
 
 	return nil
 }
 
-func (sa *SimulatedAnnealing) computeTemperature() int {
+func (sa *SimulatedAnnealing) computeTemperature() float64 {
 
 	currentSolution := sa.voronoi.ToPixels()
-	temperature := 0
+	heat := 0.0
 	for i, b := range sa.targetImage.Bytes {
+
 		targetValue := int(b)
 		currentValue := int(currentSolution[i])
-		temperature += abs(targetValue - currentValue)
+		heat += math.Abs(float64(targetValue - currentValue))
 	}
 
-	return temperature
+	return heat / sa.maxHeat
 }
 
-func (sa *SimulatedAnnealing) isAcceptableTemperature(temperature int) bool {
-	if temperature < sa.temperature {
+func (sa *SimulatedAnnealing) isAcceptableTemperature(temperature float64) bool {
+	if temperature <= sa.temperature {
 		return true
 	}
 
-	prob := 1 / math.Log10(float64(temperature-sa.temperature))
 	rand := sa.r.Float64()
-	return prob > rand
+	percDiff := (temperature - sa.temperature) * 100 / sa.temperature
+	sigmoid := (2 / (1 + math.Exp(-3*percDiff))) - 1 // sigmoid function variation
+	return rand > sigmoid
 }
 
 func (sa *SimulatedAnnealing) logIteration() error {
 	fmt.Printf(
-		"Current temperature: %d, time passed: %s\n",
+		"Current temperature: %.10f, time passed: %s\n",
 		sa.temperature,
 		time.Since(sa.startingTime),
 	)
 
 	_, err := sa.statFile.WriteString(
-		fmt.Sprintf("%.0f,%d\n",
+		fmt.Sprintf("%.0f,%.10f\n",
 			time.Since(sa.startingTime).Seconds(),
 			sa.temperature),
 	)
