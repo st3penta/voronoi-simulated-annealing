@@ -267,33 +267,29 @@ func (v *Voronoi) GetSeeds() []Point {
 	return v.seeds
 }
 
-func (v *Voronoi) Perturbate(temperature int, seedIndex int) error {
+func (v *Voronoi) Perturbate(temperature float64, seedIndex int) error {
 
-	perturbationFactor := float64(temperature) / float64(4*256*v.width*v.height)
 	toPerturbate := v.seeds[seedIndex]
-	willPerturbateCoords := v.r.Intn(2) == 1
-	willPerturbateColor := v.r.Intn(2) == 1
-
-	// avoid null perturbation
-	if !willPerturbateCoords && !willPerturbateColor {
+	choice := v.r.Intn(3)
+	willPerturbateCoords := choice == 1
+	willPerturbateColor := choice == 2
+	if choice == 3 {
 		willPerturbateCoords = true
 		willPerturbateColor = true
 	}
 
 	newX := toPerturbate.X
 	newY := toPerturbate.Y
-	if willPerturbateCoords {
-		newX = v.perturbateCoordinate(toPerturbate.X, v.width, perturbationFactor)
-		newY = v.perturbateCoordinate(toPerturbate.Y, v.height, perturbationFactor)
-	}
-
 	newColor := toPerturbate.Color
-	if willPerturbateColor {
+	if willPerturbateCoords {
+		newX = v.perturbateCoordinate(toPerturbate.X, v.width)
+		newY = v.perturbateCoordinate(toPerturbate.Y, v.height)
+	} else if willPerturbateColor {
 		newColor = &color.RGBA{
 			A: 255,
-			R: v.perturbateTint(toPerturbate.Color.R, 256, perturbationFactor),
-			G: v.perturbateTint(toPerturbate.Color.G, 256, perturbationFactor),
-			B: v.perturbateTint(toPerturbate.Color.B, 256, perturbationFactor),
+			R: v.perturbateTint(toPerturbate.Color.R, 256),
+			G: v.perturbateTint(toPerturbate.Color.G, 256),
+			B: v.perturbateTint(toPerturbate.Color.B, 256),
 		}
 	}
 
@@ -313,12 +309,12 @@ func (v *Voronoi) Perturbate(temperature int, seedIndex int) error {
 	return nil
 }
 
-func (v *Voronoi) perturbateCoordinate(currentCoordinate int, maxValue int, perturbationFactor float64) int {
+func (v *Voronoi) perturbateCoordinate(currentCoordinate int, maxValue int) int {
 	var newCoordinate int
 
-	movement := v.r.Float64() * perturbationFactor * float64(maxValue) / float64(v.movementReductionFactor)
-	multiplier := v.r.Intn(2)*2 - 1
-	newCoordinate = currentCoordinate + int(float64(multiplier)*movement)
+	movement := v.r.Float64() * float64(maxValue) / float64(v.movementReductionFactor)
+	multiplier := float64(v.r.Intn(2)*2 - 1)
+	newCoordinate = currentCoordinate + int(multiplier*movement)
 
 	if newCoordinate >= maxValue {
 		newCoordinate = maxValue - 1
@@ -329,10 +325,10 @@ func (v *Voronoi) perturbateCoordinate(currentCoordinate int, maxValue int, pert
 	return newCoordinate
 }
 
-func (v *Voronoi) perturbateTint(currentTint byte, maxValue int, perturbationFactor float64) uint8 {
+func (v *Voronoi) perturbateTint(currentTint byte, maxValue int) uint8 {
 	var newTint int
 
-	movement := v.r.Float64() * perturbationFactor * float64(maxValue)
+	movement := v.r.Float64() * float64(maxValue)
 	multiplier := v.r.Intn(2)*2 - 1
 
 	newTint = int(currentTint) + int(float64(multiplier)*movement)
