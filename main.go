@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	numSeeds                = 10
-	perturbations           = 2
+	numSeeds                = 50
+	perturbations           = 3
 	seedReiterations        = 1
-	movementReductionFactor = 5
+	movementReductionFactor = 10
 	percentThreshold        = 10
 	simulationDuration      = 3 * time.Hour
 	snapshotsInterval       = 1 * time.Minute
@@ -124,7 +124,6 @@ func runSimulatedAnnealing(
 		voronoi,
 		targetImage,
 		statFile,
-		perturbations,
 		seedReiterations,
 		percentThreshold,
 	)
