@@ -101,10 +101,9 @@ func (g *Canvas) savePNG() error {
 	i := g.simulatedAnnealing.GetSnapshot()
 
 	pngFile, err := os.Create(
-		fmt.Sprintf("./res/%s_%d-seeds_%d-movreduction_%d.png",
+		fmt.Sprintf("./res/%s_%d-seeds_%d.png",
 			imageName,
 			numSeeds,
-			movementReductionFactor,
 			int(time.Since(g.simulationStart).Seconds()),
 		))
 	if err != nil {

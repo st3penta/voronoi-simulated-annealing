@@ -22,9 +22,8 @@ type Voronoi struct {
 	radius      int     // current radius of the computation
 	activeSeeds []Point // list of active seeds to take into account for the computation
 
-	distances               [][]int // precomputed distances matrix (for efficiency reasons)
-	r                       *rand.Rand
-	movementReductionFactor int
+	distances [][]int // precomputed distances matrix (for efficiency reasons)
+	r         *rand.Rand
 
 	diagram [][]*Point // resulting diagram (initially empty, to be computed)
 }
@@ -34,7 +33,6 @@ func NewVoronoi(
 	width int,
 	height int,
 	numSeeds int,
-	movementReductionFactor int,
 ) (*Voronoi, error) {
 
 	if numSeeds > width*height {
@@ -42,16 +40,15 @@ func NewVoronoi(
 	}
 
 	v := Voronoi{
-		width:                   width,
-		height:                  height,
-		numSeeds:                numSeeds,
-		seeds:                   []Point{},
-		radius:                  0,
-		activeSeeds:             []Point{},
-		distances:               make([][]int, 3*width+height),
-		r:                       rand.New(rand.NewSource(time.Now().UnixNano())),
-		movementReductionFactor: movementReductionFactor,
-		diagram:                 make([][]*Point, width),
+		width:       width,
+		height:      height,
+		numSeeds:    numSeeds,
+		seeds:       []Point{},
+		radius:      0,
+		activeSeeds: []Point{},
+		distances:   make([][]int, 3*width+height),
+		r:           rand.New(rand.NewSource(time.Now().UnixNano())),
+		diagram:     make([][]*Point, width),
 	}
 	v.Init()
 
@@ -312,8 +309,9 @@ func (v *Voronoi) Perturbate(temperature float64, seedIndex int) error {
 func (v *Voronoi) perturbateCoordinate(currentCoordinate int, maxValue int) int {
 	var newCoordinate int
 
-	movement := v.r.Float64() * float64(maxValue) / float64(v.movementReductionFactor)
+	movementAmplitude := v.r.Float64()
 	multiplier := float64(v.r.Intn(2)*2 - 1)
+	movement := movementAmplitude * float64(maxValue) / float64(v.numSeeds)
 	newCoordinate = currentCoordinate + int(multiplier*movement)
 
 	if newCoordinate >= maxValue {
