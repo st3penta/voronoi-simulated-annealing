@@ -17,3 +17,4 @@
 # Simulation result files
 res/*.csv
 res/*.png
+res/*/*
