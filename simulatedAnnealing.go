@@ -64,7 +64,11 @@ func NewSimulatedAnnealing(
 func (sa *SimulatedAnnealing) Iterate() error {
 	currentSeeds := sa.voronoi.GetSeeds()
 
-	perturbations := int(math.Ceil(sa.temperature * 10))
+	perturbations := int(math.Floor(sa.temperature * float64(len(currentSeeds)) / 3))
+	if perturbations == 0 {
+		perturbations = 1
+	}
+
 	for j := 0; j < perturbations; j++ {
 		pErr := sa.voronoi.Perturbate(
 			sa.temperature,
