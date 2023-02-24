@@ -134,7 +134,7 @@ func (sa *SimulatedAnnealing) isAcceptableTemperature(temperature float64) bool 
 
 	rand := sa.r.Float64()
 	percDiff := (temperature - sa.temperature) * 100 / sa.temperature
-	sigmoid := (2 / (1 + math.Exp(-3*percDiff))) - 1 // sigmoid function variation
+	sigmoid := (2 / (1 + math.Exp(-10*percDiff))) - 1 // sigmoid function variation
 	return rand > sigmoid
 }
 
