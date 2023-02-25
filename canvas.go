@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"image"
 	"image/png"
 	"os"
 	"time"
@@ -12,13 +11,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+// SimulationCompleted is the error returned when the simulation ends by timeout
 var SimulationCompleted = errors.New("Simulation completed")
-
-type SimulatedAnnealingEngine interface {
-	Iterate() error
-	ToPixels() []byte
-	GetSnapshot() image.Image
-}
 
 // Canvas handles the canvas visualization
 type Canvas struct {
@@ -31,11 +25,14 @@ type Canvas struct {
 
 	gameRunning bool
 
+	// simulated annealing info
 	simulatedAnnealing SimulatedAnnealingEngine
 	simulationDuration time.Duration
 	simulationStart    time.Time
-	lastSnapshot       time.Time
-	snapshotsInterval  time.Duration
+
+	// snapshots logic timers
+	lastSnapshot      time.Time
+	snapshotsInterval time.Duration
 }
 
 // NewCanvas creates a canvas with the simulated annealing ready to start
@@ -67,19 +64,20 @@ func NewCanvas(
 // Update computes a new frame
 func (g *Canvas) Update() error {
 
+	// end the simulation if the timeout has been reached
 	if time.Since(g.simulationStart) > g.simulationDuration {
 		return SimulationCompleted
 	}
 
-	// Intercepts the Space key and starts/stops the execution
+	// intercept the Space key and start/stop the execution
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		g.gameRunning = !g.gameRunning
 	}
-
 	if !g.gameRunning {
 		return nil
 	}
 
+	// take periodic snapshots of the canvas
 	err := g.savePNG()
 	if err != nil {
 		panic(err)
@@ -99,13 +97,18 @@ func (g *Canvas) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHei
 	return g.width, g.height
 }
 
+// savePNG saves periodic snapshots of the canvas
 func (g *Canvas) savePNG() error {
+
+	// skip the saving if the last snapshot is still too recent
 	if !(time.Since(g.lastSnapshot) > g.snapshotsInterval) {
 		return nil
 	}
 
+	// get the image data
 	i := g.simulatedAnnealing.GetSnapshot()
 
+	// create a png file for the snapshot
 	pngFile, err := os.Create(
 		fmt.Sprintf("./res/%s_%d-seeds_%d.png",
 			g.imageName,
@@ -116,11 +119,14 @@ func (g *Canvas) savePNG() error {
 		return err
 	}
 
+	// save the data into the png file
 	err = png.Encode(pngFile, i)
 	if err != nil {
 		return err
 	}
 
+	// reset the snapshot interval timer
 	g.lastSnapshot = time.Now()
+
 	return nil
 }

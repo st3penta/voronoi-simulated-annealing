@@ -1,6 +1,16 @@
 package main
 
-import "image/color"
+import (
+	"image"
+	"image/color"
+)
+
+// SimulatedAnnealingEngine is the engine that manages the annealing simulation
+type SimulatedAnnealingEngine interface {
+	Iterate() error
+	ToPixels() []byte
+	GetSnapshot() image.Image
+}
 
 // TargetImage is the struct containing info about the target image: its name, size, and the RGBA values of its pixels
 type TargetImage struct {
