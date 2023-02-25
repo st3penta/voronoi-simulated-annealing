@@ -65,7 +65,7 @@ func getTargetImage(inputImageFilePath string) TargetImage {
 
 	fileNameWithExt := filepath.Base(inputImageFilePath)
 	fileExtension := filepath.Ext(inputImageFilePath)
-	fileName := strings.Replace(fileNameWithExt, "."+fileExtension, "", 1)
+	fileName := strings.Replace(fileNameWithExt, fileExtension, "", 1)
 
 	reader, openErr := os.Open(inputImageFilePath)
 	if openErr != nil {
