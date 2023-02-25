@@ -21,23 +21,21 @@ type VoronoiDiagram interface {
 }
 
 type SimulatedAnnealing struct {
-	voronoi          VoronoiDiagram
-	targetImage      TargetImage
-	startingTime     time.Time
-	statFile         *os.File
-	r                *rand.Rand
-	temperature      float64
-	maxHeat          float64
-	bestTemperature  float64
-	bestSolution     []Point
-	percentThreshold int
+	voronoi         VoronoiDiagram
+	targetImage     TargetImage
+	startingTime    time.Time
+	statFile        *os.File
+	r               *rand.Rand
+	temperature     float64
+	maxHeat         float64
+	bestTemperature float64
+	bestSolution    []Point
 }
 
 func NewSimulatedAnnealing(
 	voronoi VoronoiDiagram,
 	targetImage TargetImage,
 	statFile *os.File,
-	percentThreshold int,
 ) (*SimulatedAnnealing, error) {
 
 	_, err := statFile.WriteString("elapsed_seconds,temperature\n")
@@ -48,16 +46,15 @@ func NewSimulatedAnnealing(
 	maxHeat := float64(4 * 255 * targetImage.Width * targetImage.Height)
 
 	return &SimulatedAnnealing{
-		voronoi:          voronoi,
-		targetImage:      targetImage,
-		maxHeat:          maxHeat,
-		bestTemperature:  1.0,
-		bestSolution:     nil,
-		temperature:      1.0,
-		startingTime:     time.Now(),
-		statFile:         statFile,
-		r:                rand.New(rand.NewSource(time.Now().UnixNano())),
-		percentThreshold: percentThreshold,
+		voronoi:         voronoi,
+		targetImage:     targetImage,
+		maxHeat:         maxHeat,
+		bestTemperature: 1.0,
+		bestSolution:    nil,
+		temperature:     1.0,
+		startingTime:    time.Now(),
+		statFile:        statFile,
+		r:               rand.New(rand.NewSource(time.Now().UnixNano())),
 	}, nil
 }
 
@@ -91,8 +88,8 @@ func (sa *SimulatedAnnealing) Iterate() error {
 		return nil
 	}
 
-	if (newTemperature - sa.bestTemperature) > sa.bestTemperature*float64(sa.percentThreshold)/100 {
-		fmt.Printf("Current temperature exceeded %d percent threshold, restarting from the best solution so far: %.10f\n", sa.percentThreshold, sa.bestTemperature)
+	if (newTemperature - sa.bestTemperature) > sa.bestTemperature/10 {
+		fmt.Printf("Current temperature exceeded 10 percent threshold, restarting from the best solution so far: %.10f\n", sa.bestTemperature)
 
 		sa.voronoi.WithSeeds(sa.bestSolution)
 		sa.temperature = sa.bestTemperature

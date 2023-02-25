@@ -15,7 +15,6 @@ import (
 
 var (
 	defaultNumSeeds    = 50
-	percentThreshold   = 10
 	simulationDuration = 3 * time.Hour
 	snapshotsInterval  = 1 * time.Minute
 	defaultImageName   = "homer"
@@ -133,7 +132,6 @@ func runSimulatedAnnealing(
 		voronoi,
 		targetImage,
 		statFile,
-		percentThreshold,
 	)
 	if saErr != nil {
 		panic(saErr)
