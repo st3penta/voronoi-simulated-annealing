@@ -29,30 +29,38 @@ func main() {
 
 	app := &cli.App{
 
+		Name: "Voronoi Simulated Annealing",
+
+		Usage: "Simulated Annealing approximation using Voronoi diagrams",
+
+		Description: "This simulation takes an image in input and tries to approximate it with a voronoi diagram, by using the simulate annealing approach",
+
+		UsageText: "voronoi-simulated-annealing [command] [options]",
+
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:        "input image",
+				Name:        "targetImage",
 				Aliases:     []string{"i"},
 				Usage:       "Path to the input image `FILE` to be used as target image for the annealing",
 				Value:       "./res/" + defaultImageName + ".jpg",
 				Destination: &inputImageFilePath,
 			},
 			&cli.IntFlag{
-				Name:        "number of seeds",
+				Name:        "seedsNumber",
 				Aliases:     []string{"n"},
 				Usage:       "Number of seeds (cells) used in the voronoi diagram",
 				Value:       defaultNumSeeds,
 				Destination: &numSeeds,
 			},
 			&cli.DurationFlag{
-				Name:        "simulation duration",
+				Name:        "simulationDuration",
 				Aliases:     []string{"d"},
 				Usage:       "Duration of the simulation",
 				Value:       defaultSimulationDuration,
 				Destination: &simulationDuration,
 			},
 			&cli.DurationFlag{
-				Name:        "snapshots interval",
+				Name:        "snapshotsInterval",
 				Aliases:     []string{"s"},
 				Usage:       "Time interval between the snapshots taken during the simulation (to track the progresses)",
 				Value:       defaultSnapshotsInterval,
@@ -60,17 +68,23 @@ func main() {
 			},
 		},
 
-		Action: func(c *cli.Context) error {
+		Commands: []*cli.Command{
+			{
+				Name:    "run",
+				Aliases: []string{"r"},
+				Usage:   "Runs the simulated annealing",
+				Action: func(cCtx *cli.Context) error {
+					targetImage := getTargetImage(inputImageFilePath)
 
-			targetImage := getTargetImage(inputImageFilePath)
-
-			runSimulatedAnnealing(
-				targetImage,
-				numSeeds,
-				simulationDuration,
-				snapshotsInterval,
-			)
-			return nil
+					runSimulatedAnnealing(
+						targetImage,
+						numSeeds,
+						simulationDuration,
+						snapshotsInterval,
+					)
+					return nil
+				},
+			},
 		},
 	}
 
