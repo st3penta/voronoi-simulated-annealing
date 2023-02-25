@@ -5,6 +5,8 @@ import (
 	"image"
 	_ "image/jpeg"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
@@ -12,15 +14,16 @@ import (
 )
 
 var (
-	numSeeds           = 50
+	defaultNumSeeds    = 50
 	percentThreshold   = 10
 	simulationDuration = 3 * time.Hour
 	snapshotsInterval  = 1 * time.Minute
-
-	imageName = "homer"
+	defaultImageName   = "homer"
 )
 
 func main() {
+
+	var numSeeds int
 	var inputImageFilePath string
 
 	app := &cli.App{
@@ -30,16 +33,26 @@ func main() {
 				Name:        "input image",
 				Aliases:     []string{"i"},
 				Usage:       "path to the input image `FILE`",
-				Value:       "./res/" + imageName + ".jpg",
+				Value:       "./res/" + defaultImageName + ".jpg",
 				Destination: &inputImageFilePath,
+			},
+			&cli.IntFlag{
+				Name:        "number of seeds",
+				Aliases:     []string{"s"},
+				Usage:       "seeds used in the voronoi diagram",
+				Value:       defaultNumSeeds,
+				Destination: &numSeeds,
 			},
 		},
 
-		Action: func(cCtx *cli.Context) error {
+		Action: func(c *cli.Context) error {
 
 			targetImage := getTargetImage(inputImageFilePath)
 
-			runSimulatedAnnealing(targetImage)
+			runSimulatedAnnealing(
+				targetImage,
+				numSeeds,
+			)
 			return nil
 		},
 	}
@@ -50,6 +63,10 @@ func main() {
 }
 
 func getTargetImage(inputImageFilePath string) TargetImage {
+
+	fileNameWithExt := filepath.Base(inputImageFilePath)
+	fileExtension := filepath.Ext(inputImageFilePath)
+	fileName := strings.Replace(fileNameWithExt, "."+fileExtension, "", 1)
 
 	reader, openErr := os.Open(inputImageFilePath)
 	if openErr != nil {
@@ -78,6 +95,7 @@ func getTargetImage(inputImageFilePath string) TargetImage {
 	}
 
 	return TargetImage{
+		Name:   fileName,
 		Bytes:  imageBytes,
 		Width:  bounds.Max.X - bounds.Min.X,
 		Height: bounds.Max.Y - bounds.Min.Y,
@@ -86,11 +104,12 @@ func getTargetImage(inputImageFilePath string) TargetImage {
 
 func runSimulatedAnnealing(
 	targetImage TargetImage,
+	numSeeds int,
 ) {
 
 	statFile, err := os.Create(
 		fmt.Sprintf("./res/%s_%d-seeds.csv",
-			imageName,
+			targetImage.Name,
 			numSeeds,
 		))
 	if err != nil {
@@ -98,9 +117,7 @@ func runSimulatedAnnealing(
 	}
 
 	ebiten.SetWindowTitle(
-		fmt.Sprintf("Voronoi Simulated Annealing - %ds, %dm",
-			numSeeds,
-		))
+		fmt.Sprintf("Voronoi Simulated Annealing - %ds", numSeeds))
 	ebiten.SetWindowSize(targetImage.Width, targetImage.Height)
 
 	voronoi, vErr := NewVoronoi(
@@ -123,6 +140,8 @@ func runSimulatedAnnealing(
 	}
 
 	c, cErr := NewCanvas(
+		targetImage.Name,
+		numSeeds,
 		targetImage.Width,
 		targetImage.Height,
 		simulatedAnnealing,

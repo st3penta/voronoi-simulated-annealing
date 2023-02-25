@@ -3,6 +3,7 @@ package main
 import "image/color"
 
 type TargetImage struct {
+	Name   string
 	Bytes  []byte
 	Width  int
 	Height int

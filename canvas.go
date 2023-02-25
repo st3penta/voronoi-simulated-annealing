@@ -22,6 +22,8 @@ type SimulatedAnnealingEngine interface {
 
 // Canvas handles the canvas visualization
 type Canvas struct {
+	imageName string
+	numSeeds  int
 
 	// resolution of the canvas
 	width  int
@@ -38,6 +40,8 @@ type Canvas struct {
 
 // NewCanvas creates a canvas with the simulated annealing ready to start
 func NewCanvas(
+	imageName string,
+	numSeeds int,
 	width int,
 	height int,
 	simulatedAnnealing SimulatedAnnealingEngine,
@@ -46,6 +50,8 @@ func NewCanvas(
 ) (*Canvas, error) {
 
 	g := &Canvas{
+		imageName:          imageName,
+		numSeeds:           numSeeds,
 		width:              width,
 		height:             height,
 		gameRunning:        true,
@@ -102,8 +108,8 @@ func (g *Canvas) savePNG() error {
 
 	pngFile, err := os.Create(
 		fmt.Sprintf("./res/%s_%d-seeds_%d.png",
-			imageName,
-			numSeeds,
+			g.imageName,
+			g.numSeeds,
 			int(time.Since(g.simulationStart).Seconds()),
 		))
 	if err != nil {
