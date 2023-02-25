@@ -14,16 +14,18 @@ import (
 )
 
 var (
-	defaultNumSeeds    = 50
-	simulationDuration = 3 * time.Hour
-	snapshotsInterval  = 1 * time.Minute
-	defaultImageName   = "homer"
+	defaultNumSeeds           = 50
+	defaultSimulationDuration = 3 * time.Hour
+	defaultSnapshotsInterval  = 1 * time.Minute
+	defaultImageName          = "homer"
 )
 
 func main() {
 
 	var numSeeds int
 	var inputImageFilePath string
+	var simulationDuration time.Duration
+	var snapshotsInterval time.Duration
 
 	app := &cli.App{
 
@@ -31,16 +33,30 @@ func main() {
 			&cli.StringFlag{
 				Name:        "input image",
 				Aliases:     []string{"i"},
-				Usage:       "path to the input image `FILE`",
+				Usage:       "Path to the input image `FILE` to be used as target image for the annealing",
 				Value:       "./res/" + defaultImageName + ".jpg",
 				Destination: &inputImageFilePath,
 			},
 			&cli.IntFlag{
 				Name:        "number of seeds",
-				Aliases:     []string{"s"},
-				Usage:       "seeds used in the voronoi diagram",
+				Aliases:     []string{"n"},
+				Usage:       "Number of seeds (cells) used in the voronoi diagram",
 				Value:       defaultNumSeeds,
 				Destination: &numSeeds,
+			},
+			&cli.DurationFlag{
+				Name:        "simulation duration",
+				Aliases:     []string{"d"},
+				Usage:       "Duration of the simulation",
+				Value:       defaultSimulationDuration,
+				Destination: &simulationDuration,
+			},
+			&cli.DurationFlag{
+				Name:        "snapshots interval",
+				Aliases:     []string{"s"},
+				Usage:       "Time interval between the snapshots taken during the simulation (to track the progresses)",
+				Value:       defaultSnapshotsInterval,
+				Destination: &snapshotsInterval,
 			},
 		},
 
@@ -51,6 +67,8 @@ func main() {
 			runSimulatedAnnealing(
 				targetImage,
 				numSeeds,
+				simulationDuration,
+				snapshotsInterval,
 			)
 			return nil
 		},
@@ -104,6 +122,8 @@ func getTargetImage(inputImageFilePath string) TargetImage {
 func runSimulatedAnnealing(
 	targetImage TargetImage,
 	numSeeds int,
+	simulationDuration time.Duration,
+	snapshotsInterval time.Duration,
 ) {
 
 	statFile, err := os.Create(
