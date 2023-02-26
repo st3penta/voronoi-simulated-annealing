@@ -262,11 +262,16 @@ func (v *Voronoi) GetSeeds() []Point {
 	return v.seeds
 }
 
-// Perturbate creates a random variation of the seed
+// Perturbate creates a random variation of the current set of seeds,
+// by changing the properties of a random seed
 func (v *Voronoi) Perturbate() error {
 
+	// choose a random seed
 	seedIndex := v.r.Intn(len(v.seeds))
 	toPerturbate := v.seeds[seedIndex]
+
+	// choose which properties of the seed will be altered:
+	// its coordinates, its color, or both of them
 	choice := v.r.Intn(3)
 	willPerturbateCoords := choice == 1
 	willPerturbateColor := choice == 2
@@ -275,6 +280,7 @@ func (v *Voronoi) Perturbate() error {
 		willPerturbateColor = true
 	}
 
+	// alter the chosen properties
 	newX := toPerturbate.X
 	newY := toPerturbate.Y
 	newColor := toPerturbate.Color
@@ -290,30 +296,40 @@ func (v *Voronoi) Perturbate() error {
 		}
 	}
 
+	// replace the chosen seed with its variation
 	newSeed := Point{
 		X:     newX,
 		Y:     newY,
 		Color: newColor,
 	}
-
 	newSeeds := []Point{}
 	newSeeds = append(newSeeds, v.seeds...)
 	newSeeds[seedIndex] = newSeed
 	v.seeds = newSeeds
 
+	// re-tessellate the diagram using the altered set of seeds
 	v.initDiagram()
 	v.initTessellation()
+
 	return nil
 }
 
+// perturbateCoordinate computes a variation of the input coordinate
+//
+// The perturbation is performed as a random movement of the coordinate, spanning across the whole dimension.
+// First, random values for the amplitude and direction of the movement are computed.
+// Then, these values are used to get the actual value of the movement, reduced by a factor dependent on the number of seeds.
+// Finally, this value (that can also be negative) is added to the input coordinate value.
 func (v *Voronoi) perturbateCoordinate(currentCoordinate int, maxValue int) int {
 	var newCoordinate int
 
+	// perturbate the seed as described above
 	movementAmplitude := v.r.Float64()
 	multiplier := float64(v.r.Intn(2)*2 - 1)
-	movement := movementAmplitude * float64(maxValue) / float64(v.numSeeds)
-	newCoordinate = currentCoordinate + int(multiplier*movement)
+	movement := multiplier * movementAmplitude * float64(maxValue) / float64(v.numSeeds)
+	newCoordinate = currentCoordinate + int(movement)
 
+	// normalize the perturbated value within the bounds of the image
 	if newCoordinate >= maxValue {
 		newCoordinate = maxValue - 1
 	} else if newCoordinate < 0 {
@@ -323,19 +339,26 @@ func (v *Voronoi) perturbateCoordinate(currentCoordinate int, maxValue int) int 
 	return newCoordinate
 }
 
+// perturbateTint computes a variation of the input tint (a single component of the RGBA color)
+//
+// The perturbation is performed as a random movement of the tint, spanning across the whole value set.
+// First, random values for the amplitude and direction of the movement are computed.
+// Then, these values are used to compute the new tint value.
 func (v *Voronoi) perturbateTint(currentTint byte, maxValue int) uint8 {
 	var newTint int
 
+	// perturbate the tint as described above
 	movement := v.r.Float64() * float64(maxValue)
 	multiplier := v.r.Intn(2)*2 - 1
-
 	newTint = int(currentTint) + int(float64(multiplier)*movement)
 
+	// normalize the perturbated value within the bounds of the value set
 	if newTint >= maxValue {
 		newTint = maxValue - 1
 	} else if newTint < 0 {
 		newTint = 0
 	}
+
 	return uint8(newTint)
 }
 
@@ -379,6 +402,7 @@ func (v *Voronoi) ToPixels() []byte {
 	return pixels
 }
 
+// ToImage generates an image representation of the current voronoi diagram
 func (v *Voronoi) ToImage() image.Image {
 	res := image.NewRGBA(image.Rect(0, 0, v.width, v.height))
 

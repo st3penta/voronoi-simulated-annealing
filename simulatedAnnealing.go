@@ -80,7 +80,7 @@ func (sa *SimulatedAnnealing) Iterate() error {
 		perturbations = 1
 	}
 
-	// Perturbate the current solution as many times as computed in the previous step.
+	// perturbate the current solution as many times as computed in the previous step.
 	for j := 0; j < perturbations; j++ {
 		pErr := sa.voronoi.Perturbate()
 		if pErr != nil {
