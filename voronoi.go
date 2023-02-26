@@ -263,7 +263,7 @@ func (v *Voronoi) GetSeeds() []Point {
 }
 
 // Perturbate creates a random variation of the seed
-func (v *Voronoi) Perturbate(temperature float64) error {
+func (v *Voronoi) Perturbate() error {
 
 	seedIndex := v.r.Intn(len(v.seeds))
 	toPerturbate := v.seeds[seedIndex]

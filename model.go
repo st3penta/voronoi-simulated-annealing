@@ -16,7 +16,7 @@ type SimulatedAnnealingEngine interface {
 type VoronoiDiagram interface {
 	Init()
 	Tessellate() error
-	Perturbate(temperature float64) error
+	Perturbate() error
 	ToPixels() []byte
 	ToImage() image.Image
 	GetSeeds() []Point
