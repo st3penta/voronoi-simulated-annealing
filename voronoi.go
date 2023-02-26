@@ -130,13 +130,11 @@ func (v *Voronoi) initTessellation() {
 	// fmt.Println("#######################################")
 }
 
-/*
-Tessellate computes the voronoi diagram
-
-It works on a list of 'active' seeds, where 'active' means that the seed can still extend its area.
-At each iteration, the area of the cell corresponding to each seed gets extended by 1 pixel,
-and each of these pixels gets assigned to that cell (unless it already belongs to a nearest seed)
-*/
+// Tessellate computes the voronoi diagram
+//
+// It works on a list of 'active' seeds, where 'active' means that the seed can still extend its area.
+// At each iteration, the area of the cell corresponding to each seed gets extended by 1 pixel,
+// and each of these pixels gets assigned to that cell (unless it already belongs to a nearest seed)
 func (v *Voronoi) Tessellate() error {
 
 	// the tessellation goes on until all the seeds have extended their area as much as possible
@@ -204,18 +202,16 @@ func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bo
 	return true
 }
 
-/*
-getIncrementalVectors
+// getIncrementalVectors
 
-It returns a list of points, intended as coordinates relative to the seed,
-that represents the new layer of pixels of the expanding cell.
+// It returns a list of points, intended as coordinates relative to the seed,
+// that represents the new layer of pixels of the expanding cell.
 
-It works by computing a 45° diagonal that has an horizontal (so not orthogonal!)
-distance from the seed equal to the radius.
-This diagonal is one segment (out of 8) of the diamond surrounding the seed: to compute all
-the other segments and get the complete diamond, the algorithm generates all the possible
-combinations of the relative coordinates
-*/
+// It works by computing a 45° diagonal that has an horizontal (so not orthogonal!)
+// distance from the seed equal to the radius.
+// This diagonal is one segment (out of 8) of the diamond surrounding the seed: to compute all
+// the other segments and get the complete diamond, the algorithm generates all the possible
+// combinations of the relative coordinates
 func (v *Voronoi) getIncrementalVectors() []Point {
 	combinations := []Point{}
 
@@ -256,16 +252,20 @@ func (v *Voronoi) pointFromDiagram(x int, y int) Point {
 	return *v.diagram[x][y]
 }
 
+// WithSeeds resets the set of seeds of the voronoi diagram to the one passed in input
 func (v *Voronoi) WithSeeds(seeds []Point) {
 	v.seeds = seeds
 }
 
+// GetSeeds returns the current set of seeds of the voronoi diagram
 func (v *Voronoi) GetSeeds() []Point {
 	return v.seeds
 }
 
-func (v *Voronoi) Perturbate(temperature float64, seedIndex int) error {
+// Perturbate creates a random variation of the seed
+func (v *Voronoi) Perturbate(temperature float64) error {
 
+	seedIndex := v.r.Intn(len(v.seeds))
 	toPerturbate := v.seeds[seedIndex]
 	choice := v.r.Intn(3)
 	willPerturbateCoords := choice == 1

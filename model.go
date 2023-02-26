@@ -12,6 +12,17 @@ type SimulatedAnnealingEngine interface {
 	GetSnapshot() image.Image
 }
 
+// VoronoiDiagram is the voronoi engine used by the annealing engine
+type VoronoiDiagram interface {
+	Init()
+	Tessellate() error
+	Perturbate(temperature float64) error
+	ToPixels() []byte
+	ToImage() image.Image
+	GetSeeds() []Point
+	WithSeeds([]Point)
+}
+
 // TargetImage is the struct containing info about the target image: its name, size, and the RGBA values of its pixels
 type TargetImage struct {
 	Name   string
