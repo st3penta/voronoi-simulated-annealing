@@ -31,10 +31,10 @@ These are some of the results obtained by running the simulation:
 ## Usage
 
 You can run the script using the default parameters by simply executing the following command:  
-`./voronoi-simulated-annealing run`
+`./voronoiannealing run`
 
 More detailed instructions about the parameters used in the simulation can be found with the help command:  
-`./voronoi-simulated-annealing help`
+`./voronoiannealing help`
 
 ### Hotkeys
 

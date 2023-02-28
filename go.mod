@@ -1,4 +1,4 @@
-module voronoi-simulated-annealing
+module voronoiannealing
 
 go 1.20
 
